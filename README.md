@@ -46,13 +46,13 @@ The app exposes two primary endpoints for testing the functionality. You can use
 
 This endpoint processes all the batches in the source directory, uploads the newer files to OpenAI, and creates OpenAI batches for them.
 
-- **Method**: GET
+- **Method**: POST
 - **URL**: `http://localhost:3000/process-batches`
 
 **Example request using cURL**:
 
 ```bash
-curl -X GET http://localhost:3000/process-batches
+curl -X POST http://localhost:3000/process-batches
 ```
 ## 1. Download Results (`/download-results`)
 
