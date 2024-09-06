@@ -38,6 +38,19 @@ This app interacts with the **OpenAI Batch API** to manage asynchronous requests
 - **OpenAI API Key**: Get your API key by signing up at [OpenAI](https://beta.openai.com/signup/).
 
 
+### Environment Variables
+
+Here’s a quick overview of the environment variables used by the app:
+
+| Variable                | Description                                                                      | Default Value               |
+|-------------------------|----------------------------------------------------------------------------------|-----------------------------|
+| `OPENAI_API_KEY`        | Your OpenAI API key for making authenticated requests to the OpenAI API.         | `''` (empty string)         |
+| `OPENAI_MODEL_VERSION`  | Version of the OpenAI model used while generating input request in  `.jsonl`     | `gpt-4o-mini`               |
+| `SOURCE_DIRECTORY`      | Directory containing `.jsonl` files for batch upload.                            | `./source_dir`              |
+| `TARGET_DIRECTORY`      | Directory where OpenAI batch results will be downloaded.                         | `./target_dir`              |
+| `API_BASE_URL`          | The base URL for OpenAI API requests.                                            | `https://api.openai.com/v1` |
+
+
 ## How to Run and Test the App
 
 The app exposes two primary endpoints for testing the functionality. You can use **Postman**, **cURL**, or any HTTP client to interact with these endpoints.
