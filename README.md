@@ -53,7 +53,14 @@ Here’s a quick overview of the environment variables used by the app:
 
 ## How to Run and Test the App
 
+To run the project, use the following command:
+
+```bash
+npx ts-node src/index.ts
+```
+
 The app exposes two primary endpoints for testing the functionality. You can use **Postman**, **cURL**, or any HTTP client to interact with these endpoints.
+
 
 ### 1. Process Batches (`/process-batches`)
 
