@@ -62,7 +62,7 @@ npx ts-node src/index.ts
 The app exposes two primary endpoints for testing the functionality. You can use **Postman**, **cURL**, or any HTTP client to interact with these endpoints.
 
 
-### 1. Process Batches (`/process-batches`)
+## 1. Process Batches (`/process-batches`)
 
 This endpoint processes all the batches in the source directory, uploads the newer files to OpenAI, and creates OpenAI batches for them.
 
@@ -74,7 +74,7 @@ This endpoint processes all the batches in the source directory, uploads the new
 ```bash
 curl -X POST http://localhost:3000/process-batches
 ```
-## 1. Download Results (`/download-results`)
+# 2. Download Results (`/download-results`)
 
 This endpoint downloads OpenAI batch results to the target directory.
 
