@@ -74,7 +74,7 @@ This endpoint processes all the batches in the source directory, uploads the new
 ```bash
 curl -X POST http://localhost:3000/process-batches
 ```
-# 2. Download Results (`/download-results`)
+## 2. Download Results (`/download-results`)
 
 This endpoint downloads OpenAI batch results to the target directory.
 
