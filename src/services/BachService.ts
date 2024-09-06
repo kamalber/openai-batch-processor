@@ -31,47 +31,43 @@ export class BatchService {
         return;
       }
 
-      for (const file of filesNewerThanOpenAi) {
-        const fileUploadDTO = new FileUploadDTO(file.path);
-        const uploadedFile: OpenAIFile | null = await OpenAIRepository.uploadFile(fileUploadDTO);
+      const uploadPromises = filesNewerThanOpenAi.map(file => this.uploadAndBatchFile(file));
 
-        if (!uploadedFile) {
-          Logger.error(`Failed to upload file ${file.name}`);
-          continue;
-        }
+      await Promise.all(uploadPromises);
 
-        const createBatchDTO = new CreateBatchDTO(uploadedFile.id, file.name);
-        const createdBatch = await OpenAIRepository.createBatch(createBatchDTO);
+    } catch (error: any) {
+      Logger.error(`Error in batch processing: ${error.message}`);
+      throw new AppError(`Batch processing failed: ${error.message}`, 500);
+    }
+  }
 
-        if (!createdBatch) {
-          Logger.error(`Failed to create batch for file ${file.name}`);
-          continue;
-        }
+  // Create batch from file
+  private static async uploadAndBatchFile(file: any) {
+    try {
+      const fileUploadDTO = new FileUploadDTO(file.path);
+      const uploadedFile = await OpenAIRepository.uploadFile(fileUploadDTO);
 
-        Logger.info(`Batch created for file ${file.name}`);
+      if (!uploadedFile) {
+        Logger.error(`Failed to upload file ${file.name}`);
+        return;
+      }
+
+      const createBatchDTO = new CreateBatchDTO(uploadedFile.id, file.name);
+      const createdBatch = await OpenAIRepository.createBatch(createBatchDTO);
+
+      if (!createdBatch) {
+        Logger.error(`Failed to create batch for file ${file.name}`);
+      } else {
+        Logger.info(`Batch successfully created for file ${file.name}`);
       }
     } catch (error: any) {
-      Logger.error(`${error.message}`);
-      throw new AppError(`Error processing batches: ${error.message}`, 500);
+      Logger.error(`Error processing file ${file.name}: ${error.message}`);
     }
   }
 
-  static getLocalFilesToUpload() {
-    try {
-      const localFiles = fs.readdirSync(AppConfig.sourceDirectory).map(file => ({
-        name: file,
-        path: path.join(AppConfig.sourceDirectory, file),
-        lastModified: fs.statSync(path.join(AppConfig.sourceDirectory, file)).mtime.getTime(),
-      }));
 
-      return localFiles;
-    } catch (error: any) {
-      Logger.error(`${error.message}`);
-      throw new AppError(`Error getting local files to upload: ${error.message}`, 500);
-    }
-  }
-
-  static getFilesNewerThanOpenAi(localFiles: any[], openAiBatches: Batch[]) {
+  // Get files that are newer than their OpenAI counterparts
+ private static getFilesNewerThanOpenAi(localFiles: any[], openAiBatches: Batch[]) {
     const filesNewerThanOpenAi = localFiles
       .filter(localFile => localFile.name.endsWith('.jsonl')) // Filter for .jsonl files only
       .filter(localFile => {
@@ -87,26 +83,48 @@ export class BatchService {
     return filesNewerThanOpenAi;
   }
 
-  static async downloadBatchResults() {
-    try {
-      const batches = await OpenAIRepository.listBatches();
-      if (!batches || batches.length === 0) {
-        Logger.info('OpenAI Batches list is empty');
-        return;
-      }
-
-      for (const batch of batches) {
-        if (batch.isCompleted()) {
-          const results : any = await OpenAIRepository.downloadResults(batch.output_file_id);
-          fs.writeFileSync(path.join(AppConfig.targetDirectory, 'results.jsonl'), results);
-          Logger.info( 'Results downloaded successfully.');
-        }
-      }
-    } catch (error: any) {
-      Logger.error(`${error.message}`);
-      throw new AppError(`Error downloading batch results: ${error.message}`, 500);
-    }
+  // Get all local files from the source directory
+  private static getLocalFilesToUpload() {
+    return fs.readdirSync(AppConfig.sourceDirectory).map(fileName => {
+      const filePath = path.join(AppConfig.sourceDirectory, fileName);
+      const stats = fs.statSync(filePath);
+      return { name: fileName, path: filePath, lastModified: stats.mtimeMs };
+    });
   }
+
+
+    // Download batch results
+    static async downloadBatchResults() {
+      try {
+        const batches = await OpenAIRepository.listBatches();
+        if (!batches || batches.length === 0) {
+          Logger.info('No completed OpenAI batches found for downloading results.');
+          return;
+        }
+
+        const downloadPromises = batches.map(async (batch) => {
+          if (batch.isCompleted()) {
+            try {
+              const results = await OpenAIRepository.downloadResults(batch.output_file_id);
+              if (!results || results.length === 0) {
+                Logger.info('No results.');
+                return;
+              }
+              const resultFilePath = path.join(AppConfig.targetDirectory, `results-${batch.id}.jsonl`);
+              fs.writeFileSync(resultFilePath, results);
+              Logger.info(`Results for batch ${batch.id} downloaded successfully.`);
+            } catch (error: any) {
+              Logger.error(`Error downloading results for batch ${batch.id}: ${error.message}`);
+            }
+          }
+        });
+
+        await Promise.all(downloadPromises);
+      } catch (error: any) {
+        Logger.error(`Error downloading batch results: ${error.message}`);
+        throw new AppError(`Error downloading batch results: ${error.message}`, 500);
+      }
+    }
 
 
   // Create a .jsonl file for the batch, used for testing purposes
