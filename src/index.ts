@@ -10,7 +10,7 @@ const port = 3000;
 // Get controller from DI container
 const batchController = container.resolve(BatchController);
 
-app.post('/process-batch', (req, res) => batchController.initiateBatchProcess(req, res));
+app.post('/process-batches', (req, res) => batchController.initiateBatchProcess(req, res));
 app.post('/download-results', (req, res) => batchController.downloadResults(req, res));
 
 app.listen(port, () => {
