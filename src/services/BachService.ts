@@ -9,9 +9,14 @@ import { Batch } from '../models/Batch';
 import { OpenAIFile } from '../models/OpenAIFile';
 import { CreateBatchDTO } from '../dto/CreateBatchDTO';
 import { FileUploadDTO } from '../dto/FileUploadDTO';
+import { injectable } from 'tsyringe';
 
+
+@injectable()
 export class BatchService {
-  static async processBatches() {
+  constructor(private openAIRepository: OpenAIRepository) {}
+
+   async processBatches() {
     try {
       const localFiles = this.getLocalFilesToUpload();
       if (localFiles.length === 0) {
@@ -19,7 +24,7 @@ export class BatchService {
         return;
       }
 
-      const openAiBatches = await OpenAIRepository.listBatches();
+      const openAiBatches = await this.openAIRepository.listBatches();
       if (!openAiBatches || openAiBatches.length === 0) {
         Logger.info('OpenAI Batches list is empty');
         return;
@@ -42,10 +47,10 @@ export class BatchService {
   }
 
   // Create batch from file
-  private static async uploadAndBatchFile(file: any) {
+  private  async uploadAndBatchFile(file: any) {
     try {
       const fileUploadDTO = new FileUploadDTO(file.path);
-      const uploadedFile = await OpenAIRepository.uploadFile(fileUploadDTO);
+      const uploadedFile = await this.openAIRepository.uploadFile(fileUploadDTO);
 
       if (!uploadedFile) {
         Logger.error(`Failed to upload file ${file.name}`);
@@ -53,7 +58,7 @@ export class BatchService {
       }
 
       const createBatchDTO = new CreateBatchDTO(uploadedFile.id, file.name);
-      const createdBatch = await OpenAIRepository.createBatch(createBatchDTO);
+      const createdBatch = await this.openAIRepository.createBatch(createBatchDTO);
 
       if (!createdBatch) {
         Logger.error(`Failed to create batch for file ${file.name}`);
@@ -67,7 +72,7 @@ export class BatchService {
 
 
   // Get files that are newer than their OpenAI counterparts
- private static getFilesNewerThanOpenAi(localFiles: any[], openAiBatches: Batch[]) {
+ private  getFilesNewerThanOpenAi(localFiles: any[], openAiBatches: Batch[]) {
     const filesNewerThanOpenAi = localFiles
       .filter(localFile => localFile.name.endsWith('.jsonl')) // Filter for .jsonl files only
       .filter(localFile => {
@@ -84,7 +89,7 @@ export class BatchService {
   }
 
   // Get all local files from the source directory
-  private static getLocalFilesToUpload() {
+  private  getLocalFilesToUpload() {
     return fs.readdirSync(AppConfig.sourceDirectory).map(fileName => {
       const filePath = path.join(AppConfig.sourceDirectory, fileName);
       const stats = fs.statSync(filePath);
@@ -94,9 +99,9 @@ export class BatchService {
 
 
     // Download batch results
-    static async downloadBatchResults() {
+     async downloadBatchResults() {
       try {
-        const batches = await OpenAIRepository.listBatches();
+        const batches = await this.openAIRepository.listBatches();
         if (!batches || batches.length === 0) {
           Logger.info('No completed OpenAI batches found for downloading results.');
           return;
@@ -105,7 +110,7 @@ export class BatchService {
         const downloadPromises = batches.map(async (batch) => {
           if (batch.isCompleted()) {
             try {
-              const results = await OpenAIRepository.downloadResults(batch.output_file_id);
+              const results = await this.openAIRepository.downloadResults(batch.output_file_id);
               if (!results || results.length === 0) {
                 Logger.info('No results.');
                 return;
@@ -128,7 +133,7 @@ export class BatchService {
 
 
   // Create a .jsonl file for the batch, used for testing purposes
-  static createJsonlFile(files: any[], outputFilePath: string) {
+   createJsonlFile(files: any[], outputFilePath: string) {
     try {
       const jsonlContent = files.map((file, index) => {
         return JSON.stringify({

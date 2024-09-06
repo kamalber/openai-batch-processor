@@ -19,7 +19,11 @@ The **OpenAI Batch Processor** is designed to automate the management of batch f
 - **Programming Languages**: Node.js, TypeScript
 - **API Development**: OpenAI API, Batch API
 - **Libraries**:
-  - **[openai nodejs](https://github.com/openai/openai-node)**
+  - **[openai nodejs](https://github.com/openai/openai-node)**: For interacting with the OpenAI API.
+  - **[tsyringe](https://github.com/microsoft/tsyringe)**: A lightweight dependency injection container for TypeScript.
+  - **[reflect-metadata](https://github.com/rbuckton/reflect-metadata)**: Provides metadata reflection capabilities for TypeScript, required for `tsyringe` to work.
+  - **[express](https://expressjs.com/)**: A web framework for building RESTful APIs.
+
 
 
 ## OpenAI Usage

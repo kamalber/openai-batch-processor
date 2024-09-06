@@ -8,19 +8,24 @@ import { CreateBatchDTO } from '../dto/CreateBatchDTO';
 import { FileUploadDTO } from '../dto/FileUploadDTO';
 import { Batch } from '../models/Batch';
 import { OpenAIFile } from '../models/OpenAIFile';
+import { injectable } from 'tsyringe';
 
-const client = new OpenAI({ apiKey: AppConfig.openaiApiKey });
-
+@injectable()
 export class OpenAIRepository {
-  static async uploadFile(fileUploadDTO: FileUploadDTO): Promise<OpenAIFile | null> {
+  private client: OpenAI;
+
+  constructor() {
+    // Inject OpenAI client
+    this.client = new OpenAI({ apiKey: AppConfig.openaiApiKey });
+  }
+
+  async uploadFile(fileUploadDTO: FileUploadDTO): Promise<OpenAIFile | null> {
     try {
       return await RateLimiterMiddleware(async () => {
-
-        const response = await client.files.create(
-          {
-            file: fs.createReadStream(fileUploadDTO.file),
-            purpose: fileUploadDTO.purpose
-          });
+        const response = await this.client.files.create({
+          file: fs.createReadStream(fileUploadDTO.file),
+          purpose: fileUploadDTO.purpose,
+        });
 
         return new OpenAIFile(response);
       });
@@ -30,10 +35,10 @@ export class OpenAIRepository {
     }
   }
 
-  static async createBatch(createBatchDTO : CreateBatchDTO ): Promise<Batch | null> {
+  async createBatch(createBatchDTO: CreateBatchDTO): Promise<Batch | null> {
     try {
       return await RateLimiterMiddleware(async () => {
-        const response = await client.batches.create(createBatchDTO);
+        const response = await this.client.batches.create(createBatchDTO);
         return new Batch(response);
       });
     } catch (error) {
@@ -42,30 +47,30 @@ export class OpenAIRepository {
     }
   }
 
-  static async downloadResults(fileId: string): Promise<string | null>{
+  async downloadResults(fileId: string): Promise<string | null> {
     try {
       return await RateLimiterMiddleware(async () => {
-        const fileResponse = await client.files.content(fileId);
+        const fileResponse = await this.client.files.content(fileId);
         return await fileResponse.text();
       });
     } catch (error) {
-       handleApiError(error);
-       return null;
+      handleApiError(error);
+      return null;
     }
   }
 
-  static async listBatches(limit = 20): Promise<Batch[] | null>{
+  async listBatches(limit = 20): Promise<Batch[] | null> {
     try {
       return await RateLimiterMiddleware(async () => {
         const allBatches: Batch[] = [];
-        for await (const batch of client.batches.list({ limit })) {
+        for await (const batch of this.client.batches.list({ limit })) {
           allBatches.push(new Batch(batch));
         }
         return allBatches;
       });
     } catch (error) {
-       handleApiError(error);
-       return null;
+      handleApiError(error);
+      return null;
     }
   }
 }
